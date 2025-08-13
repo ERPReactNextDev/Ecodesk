@@ -4,13 +4,13 @@ import React, { useState, useEffect } from "react";
 import ParentLayout from "../../../components/Layouts/ParentLayout";
 import SessionChecker from "../../../components/Session/SessionChecker";
 import UserFetcher from "../../../components/User/UserFetcher";
-import AddAccountForm from "../../../components/AutomatedTickets/AddActivityForm";
-import SearchFilters from "../../../components/AutomatedTickets/SearchFilters";
-import AccountsTable from "../../../components/AutomatedTickets/ActivityTable";
+import AddAccountForm from "../../../components/AutomatedTickets/Form";
+import Filters from "../../../components/AutomatedTickets/Filters";
+import Table from "../../../components/AutomatedTickets/Table";
 import { ToastContainer, toast } from "react-toastify";
 import 'react-toastify/dist/ReactToastify.css';
 import { CiCirclePlus } from "react-icons/ci";
-import { CiImport, CiExport } from "react-icons/ci";
+import { CiExport } from "react-icons/ci";
 import ExcelJS from "exceljs";
 
 const ActivityPage: React.FC = () => {
@@ -24,16 +24,14 @@ const ActivityPage: React.FC = () => {
     const [TicketEndorsed, setTicketEndorsed] = useState("");
     const [showDeleteModal, setShowDeleteModal] = useState(false);
     const [postToDelete, setPostToDelete] = useState<string | null>(null);
-    const [startDate, setStartDate] = useState(""); // Default to null
-    const [endDate, setEndDate] = useState(""); // Default to null
-
+    const [startDate, setStartDate] = useState("");
+    const [endDate, setEndDate] = useState("");
     const [userDetails, setUserDetails] = useState({
         UserId: "", ReferenceID: "", Firstname: "", Lastname: "", Email: "", Role: "",
     });
 
     const [loading, setLoading] = useState<boolean>(true);
     const [error, setError] = useState<string | null>(null);
-
     const [showAccessModal, setShowAccessModal] = useState(false);
 
     // Fetch user data based on query parameters (user ID)
@@ -48,8 +46,8 @@ const ActivityPage: React.FC = () => {
                     if (!response.ok) throw new Error("Failed to fetch user data");
                     const data = await response.json();
                     setUserDetails({
-                        UserId: data._id, // Set the user's id here
-                        ReferenceID: data.ReferenceID || "",  // <-- Siguraduhin na ito ay may value
+                        UserId: data._id,
+                        ReferenceID: data.ReferenceID || "",
                         Firstname: data.Firstname || "",
                         Lastname: data.Lastname || "",
                         Email: data.Email || "",
@@ -70,7 +68,6 @@ const ActivityPage: React.FC = () => {
         fetchUserData();
     }, []);
 
-    // Fetch accounts from the API
     const fetchActivity = async () => {
         try {
             const response = await fetch("/api/ModuleCSR/Monitorings/FetchActivity");
@@ -136,7 +133,6 @@ const ActivityPage: React.FC = () => {
         }
     };
 
-    // Filter accounts based on search term, channel, sales agent, and date range
     const filteredAccounts = posts.filter((post) => {
         const matchesSearchTerm =
             post.CompanyName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -263,8 +259,6 @@ const ActivityPage: React.FC = () => {
         });
     };
 
-
-
     // Edit post function
     const handleEdit = (post: any) => {
         setEditPost(post);
@@ -304,18 +298,6 @@ const ActivityPage: React.FC = () => {
         }
     };
 
-    //const isRestrictedUser =
-    //userDetails?.Role !== "Super Admin" && userDetails?.Role !== "Admin" && userDetails?.ReferenceID !== "LR-CSR-849432";
-
-    // Automatically show modal if the user is restricted
-    //useEffect(() => {
-    //if (isRestrictedUser) {
-    //setShowAccessModal(true);
-    //} else {
-    //setShowAccessModal(false);
-    //}
-    //}, [isRestrictedUser]);
-
     return (
         <SessionChecker>
             <ParentLayout>
@@ -353,14 +335,14 @@ const ActivityPage: React.FC = () => {
 
                                             </div>
                                         </div>
-                                        <h2 className="text-lg font-bold mb-2">Automated Tickets</h2>
+                                        <h2 className="text-lg font-bold mb-2">CSR Tickets</h2>
                                         <p className="text-xs mb-4">
                                             This section provides an overview of ticket management, including the creation of new tickets and
                                             a list of endorsed, closed, and open tickets. It allows filtering based on various criteria to help
                                             track and manage ticket statuses efficiently.
                                         </p>
                                         <div className="mb-4 p-4 bg-white shadow-md rounded-lg text-gray-900">
-                                            <SearchFilters
+                                            <Filters
                                                 searchTerm={searchTerm}
                                                 setSearchTerm={setSearchTerm}
                                                 selectedStatus={selectedStatus}
@@ -376,12 +358,10 @@ const ActivityPage: React.FC = () => {
                                                 endDate={endDate}
                                                 setEndDate={setEndDate}
                                             />
-                                            <AccountsTable
+                                            <Table
                                                 posts={filteredAccounts}
                                                 handleEdit={handleEdit}
                                                 handleDelete={confirmDelete}
-                                                handleStatusUpdate={handleStatusUpdate}
-                                                handleRemarksUpdate={handleRemarksUpdate}
                                             />
                                         </div>
                                     </>
@@ -400,7 +380,7 @@ const ActivityPage: React.FC = () => {
                                 )}
 
                                 {showDeleteModal && (
-                                    <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
+                                    <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-[999]">
                                         <div className="bg-white p-4 rounded shadow-lg">
                                             <h2 className="text-xs font-bold mb-4">Confirm Deletion</h2>
                                             <p className="text-xs">Are you sure you want to delete this account?</p>

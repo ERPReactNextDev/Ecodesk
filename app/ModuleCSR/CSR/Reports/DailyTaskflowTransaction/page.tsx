@@ -6,7 +6,7 @@ import SessionChecker from "../../../components/Session/SessionChecker";
 import UserFetcher from "../../../components/User/UserFetcher";
 
 import SearchFilters from "../../../components/DailyTransaction/SearchFilters";
-import DailyTransactionTable from "../../../components/Taskflow/DailyTransaction/UsersTable";
+import DailyTransactionTable from "../../../components/Taskflow/DailyTransaction/Table";
 import Pagination from "../../../components/Outbound/Pagination";
 
 import { ToastContainer, toast } from "react-toastify";

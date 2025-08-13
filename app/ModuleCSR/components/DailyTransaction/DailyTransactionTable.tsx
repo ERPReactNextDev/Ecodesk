@@ -31,18 +31,18 @@ const DailyTransactionTable: React.FC<DailyTransactionTableProps> = ({ posts }) 
     <div className="overflow-x-auto">
       {sortedPosts.length > 0 ? (
         <table className="min-w-full table-auto">
-          <thead className="bg-gray-100">
+          <thead className="bg-gradient-to-r from-emerald-400 to-emerald-600 text-white">
             <tr className="text-xs text-left whitespace-nowrap border-l-4 border-emerald-400">
-              <th className="px-6 py-4 font-semibold text-gray-700">Ticket Number</th>
-              <th className="px-6 py-4 font-semibold text-gray-700">Account Name</th>
-              <th className="px-6 py-4 font-semibold text-gray-700">Contact</th>
-              <th className="px-6 py-4 font-semibold text-gray-700">Email</th>
-              <th className="px-6 py-4 font-semibold text-gray-700">Wrap Up</th>
-              <th className="px-6 py-4 font-semibold text-gray-700">Inquiry / Concern</th>
-              <th className="px-6 py-4 font-semibold text-gray-700">Remarks</th>
-              <th className="px-6 py-4 font-semibold text-gray-700">Agent</th>
-              <th className="px-6 py-4 font-semibold text-gray-700">TSM</th>
-              <th className="px-6 py-4 font-semibold text-gray-700">Time Consumed</th>
+              <th className="px-6 py-4 font-semibold">Ticket Number</th>
+              <th className="px-6 py-4 font-semibold">Account Name</th>
+              <th className="px-6 py-4 font-semibold">Contact</th>
+              <th className="px-6 py-4 font-semibold">Email</th>
+              <th className="px-6 py-4 font-semibold">Wrap Up</th>
+              <th className="px-6 py-4 font-semibold">Inquiry / Concern</th>
+              <th className="px-6 py-4 font-semibold">Remarks</th>
+              <th className="px-6 py-4 font-semibold">Agent</th>
+              <th className="px-6 py-4 font-semibold">TSM</th>
+              <th className="px-6 py-4 font-semibold">Time Consumed</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-100">

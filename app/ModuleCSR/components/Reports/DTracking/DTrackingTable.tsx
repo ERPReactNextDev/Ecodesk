@@ -1,7 +1,8 @@
 "use client";
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import moment from "moment";
-import { BsThreeDotsVertical } from "react-icons/bs";
+import { BiSolidMessageSquareEdit, BiSolidTrash } from 'react-icons/bi';
+const SCROLL_SPEED = 50;
 
 interface Post {
   _id: string;
@@ -30,6 +31,8 @@ interface AccountsTableProps {
 }
 
 const DTrackingTable: React.FC<AccountsTableProps> = ({ posts, handleEdit, handleDelete }) => {
+  const scrollRef = useRef<HTMLDivElement | null>(null);
+  const animationFrameId = useRef<number | null>(null);
   const [menuVisible, setMenuVisible] = useState<Record<string, boolean>>({});
   const [activeTicketType, setActiveTicketType] = useState<string>("All");
   const [currentPage, setCurrentPage] = useState(1);
@@ -68,88 +71,125 @@ const DTrackingTable: React.FC<AccountsTableProps> = ({ posts, handleEdit, handl
   // Change page
   const paginate = (pageNumber: number) => setCurrentPage(pageNumber);
 
+  const handleMouseMove = (e: React.MouseEvent) => {
+    if (!scrollRef.current) return;
+    if (animationFrameId.current) return; // Prevent overlapping
+
+    animationFrameId.current = requestAnimationFrame(() => {
+      const { left, right } = scrollRef.current!.getBoundingClientRect();
+      const x = e.clientX;
+      const edgeThreshold = 100;
+
+      if (x - left < edgeThreshold) {
+        scrollRef.current!.scrollBy({ left: -SCROLL_SPEED });
+      } else if (right - x < edgeThreshold) {
+        scrollRef.current!.scrollBy({ left: SCROLL_SPEED });
+      }
+
+      animationFrameId.current = null;
+    });
+  };
+
   return (
     <>
-      <div className="overflow-x-auto bg-white p-4 rounded-md">
-        {/* ✅ TicketType Filter (Select Dropdown) */}
-        <div className="mb-4 text-xs">
-          <select
-            value={activeTicketType}
-            onChange={(e) => setActiveTicketType(e.target.value)}
-            className="border px-3 py-2 rounded text-xs capitalize mr-1"
-          >
-            {ticketTypes.map((ticketType) => (
-              <option key={ticketType} value={ticketType}>
-                {ticketType}
-              </option>
-            ))}
-          </select>
-          <select
-            id="postsPerPage"
-            value={postsPerPage}
-            onChange={(e) => setPostsPerPage(Number(e.target.value))}
-            className="border px-3 py-2 rounded text-xs capitalize"
-          >
-            {[5, 10, 15, 20, 50, 100, 200, 500, 1000].map((length) => (
-              <option key={length} value={length}>
-                {length}
-              </option>
-            ))}
-          </select>
-        </div>
-
+      {/* ✅ TicketType Filter (Select Dropdown) */}
+      <div className="mb-4 text-xs">
+        <select
+          value={activeTicketType}
+          onChange={(e) => setActiveTicketType(e.target.value)}
+          className="border px-3 py-2 rounded text-xs capitalize mr-1"
+        >
+          {ticketTypes.map((ticketType) => (
+            <option key={ticketType} value={ticketType}>
+              {ticketType}
+            </option>
+          ))}
+        </select>
+        <select
+          id="postsPerPage"
+          value={postsPerPage}
+          onChange={(e) => setPostsPerPage(Number(e.target.value))}
+          className="border px-3 py-2 rounded text-xs capitalize"
+        >
+          {[5, 10, 15, 20, 50, 100, 200, 500, 1000].map((length) => (
+            <option key={length} value={length}>
+              {length}
+            </option>
+          ))}
+        </select>
+      </div>
+      <div
+        ref={scrollRef}
+        onMouseMove={handleMouseMove}
+        className="overflow-x-auto max-w-full border rounded"
+        style={{ cursor: "pointer" }}
+      >
         {/* ✅ Table */}
         <table className="min-w-full table-auto">
-          <thead className="bg-gray-100">
+          <thead className="bg-gradient-to-r from-emerald-400 to-emerald-600 text-white">
             <tr className="text-xs text-left whitespace-nowrap border-l-4 border-emerald-400">
-              <th className="px-6 py-4 font-semibold text-gray-700">Actions</th>
-              <th className="px-6 py-4 font-semibold text-gray-700">Company</th>
-              <th className="px-6 py-4 font-semibold text-gray-700">Customer Name</th>
-              <th className="px-6 py-4 font-semibold text-gray-700">Contact Number</th>
-              <th className="px-6 py-4 font-semibold text-gray-700">Ticket Type</th>
-              <th className="px-6 py-4 font-semibold text-gray-700">Ticket Concern</th>
-              <th className="px-6 py-4 font-semibold text-gray-700">Nature of Concern</th>
-              <th className="px-6 py-4 font-semibold text-gray-700">TSA</th>
-              <th className="px-6 py-4 font-semibold text-gray-700">TSM</th>
-              <th className="px-6 py-4 font-semibold text-gray-700">Pending Days</th>
-              <th className="px-6 py-4 font-semibold text-gray-700">Endorsed</th>
-              <th className="px-6 py-4 font-semibold text-gray-700">Closed</th>
-              <th className="px-6 py-4 font-semibold text-gray-700">Status</th>
-              <th className="px-6 py-4 font-semibold text-gray-700">Remarks</th>
+              <th
+                className="px-6 py-4 font-semibold sticky left-0 bg-gradient-to-r from-emerald-400 to-emerald-600 z-30"
+                style={{ minWidth: '120px' }} // optional para consistent width
+              >
+                Actions
+              </th>
+              <th className="px-6 py-4 font-semibold">Company</th>
+              <th className="px-6 py-4 font-semibold">Customer Name</th>
+              <th className="px-6 py-4 font-semibold">Contact Number</th>
+              <th className="px-6 py-4 font-semibold">Ticket Type</th>
+              <th className="px-6 py-4 font-semibold">Ticket Concern</th>
+              <th className="px-6 py-4 font-semibold">Nature of Concern</th>
+              <th className="px-6 py-4 font-semibold">TSA</th>
+              <th className="px-6 py-4 font-semibold">TSM</th>
+              <th className="px-6 py-4 font-semibold">Pending Days</th>
+              <th className="px-6 py-4 font-semibold">Endorsed</th>
+              <th className="px-6 py-4 font-semibold">Closed</th>
+              <th className="px-6 py-4 font-semibold">Status</th>
+              <th className="px-6 py-4 font-semibold">Remarks</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-100">
             {currentPosts.length > 0 ? (
               currentPosts.map((post) => (
                 <React.Fragment key={post._id}>
-                  <tr className="border-b whitespace-nowrap">
-                    <td className="px-6 py-4 text-xs flex gap-1">
+                  <tr
+                    key={post._id}
+                    className="hover:bg-emerald-50 transition-colors duration-300 cursor-pointer whitespace-nowrap"
+                    onClick={() => handleEdit(post)}
+                  >
+                    <td
+                      className="px-6 py-6 text-xs flex gap-1 sticky left-0 bg-white z-20"
+                      onClick={e => e.stopPropagation()}
+                      style={{ minWidth: '120px' }}
+                    >
                       <button
                         onClick={() => handleEdit(post)}
-                        className="bg-blue-500 text-white text-xs px-3 py-1 rounded hover:bg-blue-600 transition"
+                        className="bg-white border border-emerald-400 text-emerald-600 px-3 py-1 rounded-md flex items-center gap-1 hover:bg-emerald-600 hover:text-white transition"
+                        aria-label="Edit"
                       >
-                        Edit
+                        <BiSolidMessageSquareEdit />Edit
                       </button>
                       <button
                         onClick={() => handleDelete(post._id)}
-                        className="bg-red-500 text-white text-xs px-3 py-1 rounded hover:bg-blue-600 transition"
+                        className="bg-red-700 border text-white text-xs px-3 py-1 rounded-md hover:bg-red-800 hover:text-white transition flex items-center gap-1"
                       >
-                        Delete
+                        <BiSolidTrash />Delete
                       </button>
                     </td>
-                    <td className="px-6 py-4 text-xs">{post.CompanyName}</td>
-                    <td className="px-6 py-4 text-xs">{post.CustomerName}</td>
-                    <td className="px-6 py-4 text-xs">{post.ContactNumber}</td>
-                    <td className="px-6 py-4 text-xs">{post.TicketType}</td>
-                    <td className="px-6 py-4 text-xs">{post.TicketConcern}</td>
-                    <td className="px-6 py-4 text-xs capitalize">{post.NatureConcern}</td>
-                    <td className="px-6 py-4 text-xs">{post.SalesAgent}</td>
-                    <td className="px-6 py-4 text-xs">{post.SalesManager}</td>
-                    <td className="px-6 py-4 text-xs">{calculatePendingDays(post.ClosedDate)}</td>
-                    <td className="px-6 py-4 text-xs">{formatDate(post.EndorsedDate)}</td>
-                    <td className="px-6 py-4 text-xs">{formatDate(post.ClosedDate)}</td>
-                    <td className="px-6 py-4 text-xs">{post.TrackingStatus}</td>
-                    <td className="px-6 py-4 text-xs capitalize">{post.TrackingRemarks}</td>
+                    <td className="px-6 py-6 text-xs">{post.CompanyName}</td>
+                    <td className="px-6 py-6 text-xs">{post.CustomerName}</td>
+                    <td className="px-6 py-6 text-xs">{post.ContactNumber}</td>
+                    <td className="px-6 py-6 text-xs">{post.TicketType}</td>
+                    <td className="px-6 py-6 text-xs">{post.TicketConcern}</td>
+                    <td className="px-6 py-6 text-xs capitalize">{post.NatureConcern}</td>
+                    <td className="px-6 py-6 text-xs">{post.SalesAgent}</td>
+                    <td className="px-6 py-6 text-xs">{post.SalesManager}</td>
+                    <td className="px-6 py-6 text-xs">{calculatePendingDays(post.ClosedDate)}</td>
+                    <td className="px-6 py-6 text-xs">{formatDate(post.EndorsedDate)}</td>
+                    <td className="px-6 py-6 text-xs">{formatDate(post.ClosedDate)}</td>
+                    <td className="px-6 py-6 text-xs">{post.TrackingStatus}</td>
+                    <td className="px-6 py-6 text-xs capitalize">{post.TrackingRemarks}</td>
                   </tr>
                 </React.Fragment>
               ))

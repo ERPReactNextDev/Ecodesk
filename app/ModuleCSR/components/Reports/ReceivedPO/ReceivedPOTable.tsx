@@ -1,6 +1,7 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useRef } from "react";
+import { BiSolidMessageSquareEdit, BiSolidTrash } from 'react-icons/bi';
 import moment from "moment";
-import { BsThreeDotsVertical } from "react-icons/bs";
+const SCROLL_SPEED = 50;
 
 interface Post {
   _id: string;
@@ -30,6 +31,8 @@ interface AccountsTableProps {
 }
 
 const TransactionTable: React.FC<AccountsTableProps> = ({ posts, handleEdit, handleDelete }) => {
+  const scrollRef = useRef<HTMLDivElement | null>(null);
+  const animationFrameId = useRef<number | null>(null);
   const [menuVisible, setMenuVisible] = useState<Record<string, boolean>>({});
 
   const toggleMenu = (postId: string) => {
@@ -71,53 +74,91 @@ const TransactionTable: React.FC<AccountsTableProps> = ({ posts, handleEdit, han
     return pendingPaymentDays >= 0 ? `${pendingPaymentDays} day(s)` : "0 day(s)";
   };
 
+  const handleMouseMove = (e: React.MouseEvent) => {
+    if (!scrollRef.current) return;
+    if (animationFrameId.current) return; // Prevent overlapping
+
+    animationFrameId.current = requestAnimationFrame(() => {
+      const { left, right } = scrollRef.current!.getBoundingClientRect();
+      const x = e.clientX;
+      const edgeThreshold = 100;
+
+      if (x - left < edgeThreshold) {
+        scrollRef.current!.scrollBy({ left: -SCROLL_SPEED });
+      } else if (right - x < edgeThreshold) {
+        scrollRef.current!.scrollBy({ left: SCROLL_SPEED });
+      }
+
+      animationFrameId.current = null;
+    });
+  };
+
   return (
-    <div className="overflow-x-auto">
+    <div
+      ref={scrollRef}
+      onMouseMove={handleMouseMove}
+      className="overflow-x-auto max-w-full border rounded"
+      style={{ cursor: "pointer" }}
+    >
       <table className="min-w-full table-auto">
-        <thead className="bg-gray-100">
+        <thead className="bg-gradient-to-r from-emerald-400 to-emerald-600 text-white">
           <tr className="text-xs text-left whitespace-nowrap border-l-4 border-emerald-400">
-            <th className="px-6 py-4 font-semibold text-gray-700">Actions</th>
-            <th className="px-6 py-4 font-semibold text-gray-700">CSR Agent</th>
-            <th className="px-6 py-4 font-semibold text-gray-700">Company</th>
-            <th className="px-6 py-4 font-semibold text-gray-700">PO Number</th>
-            <th className="px-6 py-4 font-semibold text-gray-700">Amount</th>
-            <th className="px-6 py-4 font-semibold text-gray-700">SO Number</th>
-            <th className="px-6 py-4 font-semibold text-gray-700">SO Date</th>
-            <th className="px-6 py-4 font-semibold text-gray-700">Sales Agent</th>
-            <th className="px-6 py-4 font-semibold text-gray-700">Pending From SO Date</th>
-            <th className="px-6 py-4 font-semibold text-gray-700">Payment Terms</th>
-            <th className="px-6 py-4 font-semibold text-gray-700">Payment Date</th>
-            <th className="px-6 py-4 font-semibold text-gray-700">Delivery/Pick-Up Date</th>
-            <th className="px-6 py-4 font-semibold text-gray-700">Pending Days from Payment</th>
-            <th className="px-6 py-4 font-semibold text-gray-700">Status</th>
-            <th className="px-6 py-4 font-semibold text-gray-700">Source</th>
-            <th className="px-6 py-4 font-semibold text-gray-700">Created At</th>
+            <th
+              className="px-6 py-4 font-semibold sticky left-0 bg-gradient-to-r from-emerald-400 to-emerald-600 z-30"
+              style={{ minWidth: '120px' }} // optional para consistent width
+            >
+              Actions
+            </th>
+            <th className="px-6 py-4 font-semibold">CSR Agent</th>
+            <th className="px-6 py-4 font-semibold">Company</th>
+            <th className="px-6 py-4 font-semibold">PO Number</th>
+            <th className="px-6 py-4 font-semibold">Amount</th>
+            <th className="px-6 py-4 font-semibold">SO Number</th>
+            <th className="px-6 py-4 font-semibold">SO Date</th>
+            <th className="px-6 py-4 font-semibold">Sales Agent</th>
+            <th className="px-6 py-4 font-semibold">Pending From SO Date</th>
+            <th className="px-6 py-4 font-semibold">Payment Terms</th>
+            <th className="px-6 py-4 font-semibold">Payment Date</th>
+            <th className="px-6 py-4 font-semibold">Delivery/Pick-Up Date</th>
+            <th className="px-6 py-4 font-semibold">Pending Days from Payment</th>
+            <th className="px-6 py-4 font-semibold">Status</th>
+            <th className="px-6 py-4 font-semibold">Source</th>
+            <th className="px-6 py-4 font-semibold">Created At</th>
           </tr>
         </thead>
         <tbody className="divide-y divide-gray-100">
           {posts.length > 0 ? (
             posts.map((post) => (
-              <tr key={post._id} className="border-b whitespace-nowrap">
-                <td className="px-6 py-4 text-xs gap-1 flex">
+              <tr
+                key={post._id}
+                className="hover:bg-emerald-50 transition-colors duration-300 cursor-pointer whitespace-nowrap"
+                onClick={() => handleEdit(post)}
+              >
+                <td
+                  className="px-6 py-6 text-xs flex gap-1 sticky left-0 bg-white z-20"
+                  onClick={e => e.stopPropagation()}
+                  style={{ minWidth: '120px' }}
+                >
                   <button
                     onClick={() => handleEdit(post)}
-                    className="px-2 py-1 bg-blue-500 text-white rounded text-xs hover:bg-blue-600"
+                    className="bg-white border border-emerald-400 text-emerald-600 px-3 py-1 rounded-md flex items-center gap-1 hover:bg-emerald-600 hover:text-white transition"
+                    aria-label="Edit"
                   >
-                    Edit
+                    <BiSolidMessageSquareEdit />Edit
                   </button>
                   <button
                     onClick={() => handleDelete(post._id)}
-                    className="px-2 py-1 bg-red-500 text-white rounded text-xs hover:bg-red-600"
+                    className="bg-red-700 border text-white text-xs px-3 py-1 rounded-md hover:bg-red-800 hover:text-white transition flex items-center gap-1"
                   >
-                    Delete
+                    <BiSolidTrash />Delete
                   </button>
                 </td>
-                <td className="px-6 py-4 text-xs">
+                <td className="px-6 py-6 text-xs capitalize">
                   {post.AgentLastname}, {post.AgentFirstname}
                 </td>
-                <td className="px-6 py-4 text-xs uppercase">{post.CompanyName}</td>
-                <td className="px-6 py-4 text-xs">{post.PONumber}</td>
-                <td className="px-6 py-4 text-xs">
+                <td className="px-6 py-6 text-xs uppercase">{post.CompanyName}</td>
+                <td className="px-6 py-6 text-xs">{post.PONumber}</td>
+                <td className="px-6 py-6 text-xs">
                   {(() => {
                     const amountStr = post.POAmount ? post.POAmount.toString() : "0";
                     const cleaned = amountStr.replace(/[^0-9.-]+/g, "");
@@ -125,24 +166,24 @@ const TransactionTable: React.FC<AccountsTableProps> = ({ posts, handleEdit, han
                     return isNaN(amount)
                       ? "0.00"
                       : amount.toLocaleString("en-PH", {
-                          minimumFractionDigits: 2,
-                          maximumFractionDigits: 2,
-                        });
+                        minimumFractionDigits: 2,
+                        maximumFractionDigits: 2,
+                      });
                   })()}
                 </td>
-                <td className="px-6 py-4 text-xs">{post.SONumber}</td>
-                <td className="px-6 py-4 text-xs">{formatTimestamp(post.SODate)}</td>
-                <td className="px-6 py-4 text-xs">{post.SalesAgent}</td>
-                <td className="px-6 py-4 text-xs text-red-700">{calculatePendingDays(post.SODate)}</td>
-                <td className="px-6 py-4 text-xs">{post.PaymentTerms}</td>
-                <td className="px-6 py-4 text-xs">{formatTimestamp(post.PaymentDate)}</td>
-                <td className="px-6 py-4 text-xs">{formatTimestamp(post.DeliveryPickupDate)}</td>
-                <td className="px-6 py-4 text-xs text-red-700 font-semibold">
+                <td className="px-6 py-6 text-xs">{post.SONumber}</td>
+                <td className="px-6 py-6 text-xs">{formatTimestamp(post.SODate)}</td>
+                <td className="px-6 py-6 text-xs">{post.SalesAgent}</td>
+                <td className="px-6 py-6 text-xs text-red-700">{calculatePendingDays(post.SODate)}</td>
+                <td className="px-6 py-6 text-xs">{post.PaymentTerms}</td>
+                <td className="px-6 py-6 text-xs">{formatTimestamp(post.PaymentDate)}</td>
+                <td className="px-6 py-6 text-xs">{formatTimestamp(post.DeliveryPickupDate)}</td>
+                <td className="px-6 py-6 text-xs text-red-700 font-semibold">
                   {calculatePendingPaymentDays(post.PaymentDate, post.DeliveryPickupDate)}
                 </td>
-                <td className="px-6 py-4 text-xs">{post.POStatus}</td>
-                <td className="px-6 py-4 text-xs">{post.POSource}</td>
-                <td className="px-6 py-4 text-xs">{new Date(post.createdAt).toLocaleString()}</td>
+                <td className="px-6 py-6 text-xs">{post.POStatus}</td>
+                <td className="px-6 py-6 text-xs">{post.POSource}</td>
+                <td className="px-6 py-6 text-xs">{new Date(post.createdAt).toLocaleString()}</td>
               </tr>
             ))
           ) : (

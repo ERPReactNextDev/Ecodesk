@@ -1,4 +1,7 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useRef } from "react";
+import { BiSolidMessageSquareEdit, BiSolidTrash } from 'react-icons/bi';
+
+const SCROLL_SPEED = 50;
 
 interface Post {
   _id: string;
@@ -27,6 +30,8 @@ const AccountsTable: React.FC<AccountsTableProps> = ({
   handleEdit,
   handleDelete,
 }) => {
+  const scrollRef = useRef<HTMLDivElement | null>(null);
+  const animationFrameId = useRef<number | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [remarksFilter, setRemarksFilter] = useState<string>("");
   const [searchTerm, setSearchTerm] = useState<string>(""); // Search term state
@@ -67,8 +72,27 @@ const AccountsTable: React.FC<AccountsTableProps> = ({
     }, 0);
   }, [filteredPosts]);
 
+  const handleMouseMove = (e: React.MouseEvent) => {
+    if (!scrollRef.current) return;
+    if (animationFrameId.current) return; // Prevent overlapping
+
+    animationFrameId.current = requestAnimationFrame(() => {
+      const { left, right } = scrollRef.current!.getBoundingClientRect();
+      const x = e.clientX;
+      const edgeThreshold = 100;
+
+      if (x - left < edgeThreshold) {
+        scrollRef.current!.scrollBy({ left: -SCROLL_SPEED });
+      } else if (right - x < edgeThreshold) {
+        scrollRef.current!.scrollBy({ left: SCROLL_SPEED });
+      }
+
+      animationFrameId.current = null;
+    });
+  };
+
   return (
-    <div className="overflow-x-auto">
+    <div className="bg-white">
       <div className="flex flex-wrap gap-2 mb-4 items-center">
         {/* Search Input */}
         <input
@@ -107,74 +131,96 @@ const AccountsTable: React.FC<AccountsTableProps> = ({
         </select>
       </div>
 
-      {filteredPosts.length > 0 ? (
-        <>
-          <table className="min-w-full table-auto">
-            <thead className="bg-gray-100">
-              <tr className="text-xs text-left whitespace-nowrap border-l-4 border-emerald-400">
-                <th className="px-6 py-4 font-semibold text-gray-700">Actions</th>
-                <th className="px-6 py-4 font-semibold text-gray-700">Date</th>
-                <th className="px-6 py-4 font-semibold text-gray-700">Company Name</th>
-                <th className="px-6 py-4 font-semibold text-gray-700">Item Category</th>
-                <th className="px-6 py-4 font-semibold text-gray-700">Item Code</th>
-                <th className="px-6 py-4 font-semibold text-gray-700">Item Description</th>
-                <th className="px-6 py-4 font-semibold text-gray-700">Quantity</th>
-                <th className="px-6 py-4 font-semibold text-gray-700">Remarks</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-100">
-              {paginatedPosts.map((post) => (
-                <tr key={post._id} className="border-b whitespace-nowrap">
-                  <td className="px-6 py-4 text-xs gap-1 flex">
-                    <button
-                      onClick={() => handleEdit(post)}
-                      className="px-2 py-1 bg-blue-500 text-white rounded text-xs hover:bg-blue-600"
-                    >
-                      Edit
-                    </button>
-                    <button
-                      onClick={() => handleDelete(post._id)}
-                      className="px-2 py-1 bg-red-500 text-white rounded text-xs hover:bg-red-600"
-                    >
-                      Delete
-                    </button>
-                  </td>
-                  <td className="px-6 py-4 text-xs">{new Date(post.createdAt).toLocaleString()}</td>
-                  <td className="px-6 py-4 text-xs">{post.CompanyName}</td>
-                  <td className="px-6 py-4 text-xs">{post.ItemCategory}</td>
-                  <td className="px-6 py-4 text-xs">{post.ItemCode}</td>
-                  <td className="px-6 py-4 text-xs">{post.ItemDescription}</td>
-                  <td className="px-6 py-4 text-xs">{post.QtySold}</td>
-                  <td className="px-6 py-4 text-xs capitalize">{post.Remarks}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </>
-      ) : (
-        <p className="text-center text-gray-500 text-xs mt-4">No records found</p>
-      )}
+      <div
+        ref={scrollRef}
+        onMouseMove={handleMouseMove}
+        className="overflow-x-auto max-w-full border rounded"
+        style={{ cursor: "pointer" }}
+      >
 
-      {/* Pagination Controls */}
-      <div className="flex justify-between items-center mt-4">
-        <button
-          onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
-          disabled={currentPage === 1}
-          className="px-3 py-1 bg-gray-300 text-gray-600 rounded text-xs"
-        >
-          Previous
-        </button>
-        <span className="text-xs">
-          Page {currentPage} of {totalPages}
-        </span>
-        <button
-          onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
-          disabled={currentPage === totalPages}
-          className="px-3 py-1 bg-gray-300 text-gray-600 rounded text-xs"
-        >
-          Next
-        </button>
+        {filteredPosts.length > 0 ? (
+          <>
+            <table className="min-w-full table-auto">
+              <thead className="bg-gradient-to-r from-emerald-400 to-emerald-600 text-white">
+                <tr className="text-xs text-left whitespace-nowrap border-l-4 border-emerald-400">
+                  <th
+                    className="px-6 py-4 font-semibold sticky left-0 bg-gradient-to-r from-emerald-400 to-emerald-600 z-30"
+                    style={{ minWidth: '120px' }} // optional para consistent width
+                  >
+                    Actions
+                  </th>
+                  <th className="px-6 py-4 font-semibold">Date</th>
+                  <th className="px-6 py-4 font-semibold">Company Name</th>
+                  <th className="px-6 py-4 font-semibold">Item Category</th>
+                  <th className="px-6 py-4 font-semibold">Item Code</th>
+                  <th className="px-6 py-4 font-semibold">Item Description</th>
+                  <th className="px-6 py-4 font-semibold">Quantity</th>
+                  <th className="px-6 py-4 font-semibold">Remarks</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-100">
+                {paginatedPosts.map((post) => (
+                  <tr
+                    key={post._id}
+                    className="hover:bg-emerald-50 transition-colors duration-300 cursor-pointer whitespace-nowrap"
+                    onClick={() => handleEdit(post)}
+                  >
+                    <td
+                      className="px-6 py-6 text-xs flex gap-1 sticky left-0 bg-white z-20"
+                      onClick={e => e.stopPropagation()}
+                      style={{ minWidth: '120px' }}
+                    >
+                      <button
+                        onClick={() => handleEdit(post)}
+                        className="bg-white border border-emerald-400 text-emerald-600 px-3 py-1 rounded-md flex items-center gap-1 hover:bg-emerald-600 hover:text-white transition"
+                        aria-label="Edit"
+                      >
+                        <BiSolidMessageSquareEdit />Edit
+                      </button>
+                      <button
+                        onClick={() => handleDelete(post._id)}
+                        className="bg-red-700 border text-white text-xs px-3 py-1 rounded-md hover:bg-red-800 hover:text-white transition flex items-center gap-1"
+                      >
+                        <BiSolidTrash />Delete
+                      </button>
+                    </td>
+                    <td className="px-6 py-4 text-xs">{new Date(post.createdAt).toLocaleString()}</td>
+                    <td className="px-6 py-4 text-xs">{post.CompanyName}</td>
+                    <td className="px-6 py-4 text-xs">{post.ItemCategory}</td>
+                    <td className="px-6 py-4 text-xs">{post.ItemCode}</td>
+                    <td className="px-6 py-4 text-xs">{post.ItemDescription}</td>
+                    <td className="px-6 py-4 text-xs">{post.QtySold}</td>
+                    <td className="px-6 py-4 text-xs capitalize">{post.Remarks}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </>
+        ) : (
+          <p className="text-center text-gray-500 text-xs mt-4">No records found</p>
+        )}
+
       </div>
+      {/* Pagination Controls */}
+        <div className="flex justify-between items-center mt-4">
+          <button
+            onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+            disabled={currentPage === 1}
+            className="px-3 py-1 bg-gray-300 text-gray-600 rounded text-xs"
+          >
+            Previous
+          </button>
+          <span className="text-xs">
+            Page {currentPage} of {totalPages}
+          </span>
+          <button
+            onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
+            disabled={currentPage === totalPages}
+            className="px-3 py-1 bg-gray-300 text-gray-600 rounded text-xs"
+          >
+            Next
+          </button>
+        </div>
     </div>
   );
 };

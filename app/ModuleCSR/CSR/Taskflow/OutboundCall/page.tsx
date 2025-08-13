@@ -7,8 +7,6 @@ import UserFetcher from "../../../components/User/UserFetcher";
 
 import SearchFilters from "../../../components/Taskflow/Outbound/SearchFilters";
 import OutboundTable from "../../../components/Taskflow/Outbound/UsersTable";
-import Pagination from "../../../components/Outbound/Pagination";
-
 import 'react-toastify/dist/ReactToastify.css';
 import ExcelJS from 'exceljs';
 import { CiExport } from "react-icons/ci";
@@ -20,7 +18,7 @@ const OutboundCallPage: React.FC = () => {
     const [searchTerm, setSearchTerm] = useState("");
     const [selectedClientType, setSelectedClientType] = useState("");
     const [currentPage, setCurrentPage] = useState(1);
-    const [postsPerPage, setPostsPerPage] = useState(10);
+    const [postsPerPage, setPostsPerPage] = useState(5);
     const [startDate, setStartDate] = useState("");
     const [endDate, setEndDate] = useState("");
     const [usersList, setUsersList] = useState<any[]>([]);
@@ -136,12 +134,6 @@ const OutboundCallPage: React.FC = () => {
             return matchesSearch && matchesClientType && isWithinDateRange;
         });
 
-    // Pagination logic
-    const indexOfLastPost = currentPage * postsPerPage;
-    const indexOfFirstPost = indexOfLastPost - postsPerPage;
-    const currentPosts = filteredPosts.slice(indexOfFirstPost, indexOfLastPost);
-    const totalPages = Math.ceil(filteredPosts.length / postsPerPage);
-
     const exportToExcel = () => {
         const workbook = new ExcelJS.Workbook();
         const worksheet = workbook.addWorksheet("Outbound Calls");
@@ -230,11 +222,6 @@ const OutboundCallPage: React.FC = () => {
                                     <button onClick={exportToExcel} className="mb-4 px-4 py-2 bg-gray-100 shadow-sm text-dark text-xs flex items-center gap-1 rounded"><CiExport size={20} /> Export to Excel</button>
 
                                     <OutboundTable posts={filteredPosts} />
-                                    <Pagination
-                                        currentPage={currentPage}
-                                        totalPages={totalPages}
-                                        setCurrentPage={setCurrentPage}
-                                    />
                                 </div>
 
                                 {showAccessModal && (

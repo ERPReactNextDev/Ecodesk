@@ -1,8 +1,9 @@
 "use client";
+
 import React, { useEffect, useState, useMemo } from "react";
 import { RiRefreshLine } from "react-icons/ri";
 import { CiExport } from "react-icons/ci";
-import { motion } from "framer-motion";
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Cell, } from "recharts";
 
 interface Metric {
   createdAt: string;
@@ -31,6 +32,18 @@ const COLORS = [
   "#3A7D44", "#27445D", "#71BBB2", "#578FCA", "#9966FF", "#FF9F40",
   "#C9CBCF", "#8B0000", "#008080", "#FFD700", "#DC143C"
 ];
+
+const CustomTooltip = ({ active, payload, label }: any) => {
+  if (active && payload && payload.length) {
+    return (
+      <div className="bg-white rounded-xl shadow-lg px-4 py-2 text-xs text-gray-700">
+        <p className="font-semibold">{label}</p>
+        <p>Count: {payload[0].value}</p>
+      </div>
+    );
+  }
+  return null;
+};
 
 const MetricTable: React.FC<MetricTableProps> = ({
   ReferenceID, Role, startDate, endDate
@@ -79,10 +92,11 @@ const MetricTable: React.FC<MetricTableProps> = ({
       if (!CHANNELS.includes(Channel)) continue;
       counts[Channel] = (counts[Channel] || 0) + 1;
     }
-    return counts;
+    return Object.entries(counts).map(([channel, count]) => ({
+      name: channel,
+      value: count,
+    }));
   }, [metrics]);
-
-  const maxValue = useMemo(() => Math.max(...Object.values(grouped), 1), [grouped]);
 
   const handleExportCSV = () => {
     const csvRows = [
@@ -122,46 +136,50 @@ const MetricTable: React.FC<MetricTableProps> = ({
               onClick={handleExportCSV}
               className="flex items-center gap-1 border mb-2 bg-white text-black text-xs px-4 py-2 shadow-sm rounded hover:bg-orange-500 hover:text-white transition"
             >
-              <CiExport size={16} /> Export CSV
+              <CiExport size={16} /> Export
             </button>
           </div>
-          <div className="w-full overflow-x-auto">
-            <div className="grid grid-cols-12 gap-2 items-end sm:min-h-[400px]">
-              {CHANNELS.map((channel, i) => {
-                const value = grouped[channel] || 0;
-                const height = (value / maxValue) * 100;
 
-                return (
-                  <div
-                    key={channel}
-                    className="flex flex-col items-center h-full col-span-1 cursor-pointer group"
-                    onClick={() => setSelectedChannel(channel)}
-                  >
-                    <div className="relative w-full flex-1 bg-gray-100 flex items-end rounded-md overflow-hidden">
-                      <motion.div
-                        title={`${channel}: ${value}`}
-                        style={{
-                          height: `${height}%`,
-                          backgroundColor: COLORS[i % COLORS.length],
-                        }}
-                        className="w-full rounded-t"
-                        whileHover={{ scale: 1.05 }}
-                        whileTap={{ scale: 0.95 }}
-                        transition={{ type: "spring", stiffness: 300 }}
-                      />
-                    </div>
-                    <span className="text-[10px] sm:text-xs text-center mt-1">{channel}</span>
-                    <span className="text-[10px] font-semibold sm:text-sm">{value}</span>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-          <div className="text-xs font-medium mt-2 text-right">
-            Total Records: {metrics.length}
+          <div className="w-full h-[400px] text-[12px]">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart
+                data={grouped}
+                margin={{ top: 20, right: 30, left: 0, bottom: 30 }}
+                onClick={(e) => {
+                  if (e && e.activeLabel) {
+                    setSelectedChannel(e.activeLabel);
+                  }
+                }}
+              >
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="name" angle={-45} textAnchor="end" interval={0} height={60} />
+                <YAxis />
+                <Tooltip content={<CustomTooltip />} />
+                <Bar dataKey="value" radius={[8, 8, 0, 0]}>
+                  {grouped.map((entry, index) => (
+                    <Cell
+                      key={`cell-${index}`}
+                      fill={COLORS[index % COLORS.length]}
+                      cursor="pointer"
+                    />
+                  ))}
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
           </div>
 
-          {/* Modal-like box */}
+          {/* Legend */}
+          <div className="flex flex-wrap gap-2 mt-4 text-xs">
+            {grouped.map((entry, index) => (
+              <div key={index} className="flex items-center gap-2">
+                <span className="w-3 h-3 rounded-full inline-block" style={{ backgroundColor: COLORS[index % COLORS.length] }}></span>
+                {entry.name}
+              </div>
+            ))}
+          </div>
+
+          <div className="text-xs font-medium mt-2 text-right">Total Records: {metrics.length}</div>
+
           {selectedChannel && (
             <div className="fixed top-0 left-0 w-full h-full bg-black bg-opacity-40 flex items-center justify-center z-[999]">
               <div className="bg-white p-4 rounded-lg shadow-md w-[90%] max-w-xl">
