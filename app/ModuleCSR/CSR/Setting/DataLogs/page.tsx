@@ -4,7 +4,7 @@ import React, { useState, useEffect } from "react";
 import ParentLayout from "../../../components/Layouts/ParentLayout";
 import SessionChecker from "../../../components/Session/SessionChecker";
 import UserFetcher from "../../../components/User/UserFetcher";
-import AddAccountForm from "../../../components/Accounts/AddAccountForm";
+import AddAccountForm from "../../../components/Accounts/Form";
 import SearchFilters from "../../../components/Accounts/SearchFilters";
 import DataLogTable from "../../../components/DataLogs/UsersTable";
 import Pagination from "../../../components/Accounts/Pagination";
