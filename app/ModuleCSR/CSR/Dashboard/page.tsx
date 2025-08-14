@@ -227,7 +227,6 @@ const DashboardPage: React.FC = () => {
             </div>
           )}
 
-          {!showFilterModal && (
             <>
               <div className="grid grid-cols-1 gap-4">
                 <div className="bg-white shadow-md rounded-lg p-4">
@@ -280,7 +279,7 @@ const DashboardPage: React.FC = () => {
                 </div>
               </div>
             </>
-          )}
+         
         </div>
         <ToastContainer position="top-right" className="text-xs" autoClose={3000} hideProgressBar={false} />
       </ParentLayout>

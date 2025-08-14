@@ -1,7 +1,6 @@
 import React, { useEffect, useState, useMemo } from "react";
-import { CiExport } from "react-icons/ci";
-import ExcelJS from "exceljs";
 import { RiRefreshLine } from "react-icons/ri";
+import Export from "./ExportTSA";
 
 interface Metric {
     userName: string;
@@ -13,6 +12,8 @@ interface Metric {
     createdAt: string;
     CustomerStatus: string;
     SalesAgent: string;
+    TsaAcknowledgeDate?: string;
+    TicketEndorsed?: string;
 }
 
 interface User {
@@ -50,63 +51,6 @@ const AgentSalesConversion: React.FC<AgentSalesConversionProps> = ({
         }
     };
 
-    const referenceIdToNameMap: Record<string, string> = {
-        "Airish, Echanes": "Airish, Echanes",
-        "RME-CDO-006": "Abelou, Sanchez",
-        "RT-NCR-016": "Agnes Angeli, Panopio",
-        "RME-CDO-001": "Andrew, Banaglorosio",
-        "AB-NCR-006": "Ansley, Patelo",
-        "NTL-DVO-004": "Arteo Angelo, Beseril",
-        "RT-NCR-001": "Banjo, Lising",
-        "RT-NCR-018": "Brian, Zantua",
-        "AB-NCR-011": "Candy, Notob",
-        "RT-NCR-013": "Cesar, Paredes",
-        "RDC-R1-001": "Cris, Acierto",
-        "AB-NCR-002": "Cristy, Bobis",
-        "RT-NCR-006": "Dionisio, Doyugan",
-        "NTL-DVO-003": "Duke, Menil",
-        "RT-NCR-014": "Erish Tomas, Cajipe",
-        "AB-NCR-008": "Erwin, Laude",
-        "RT-NCR-009": "Eryll Joyce, Encina",
-        "JP-CBU-003": "Ferdinand, Canete",
-        "Florencio, Jacinto Jr": "Florencio, Jacinto Jr",
-        "RT-NCR-024": "Fortunato, Mabingnay",
-        "RT-NCR-005": "Gene Mark, Roxas",
-        "RT-NCR-004": "Gretchell, Aquino",
-        "JD-001": "Jayvee, Atienza",
-        "RT-016": "Jean, Dela Cerna",
-        "AB-NCR-007": "Jeff, Puying",
-        "RT-NCR-002": "Jeffrey, Lacson",
-        "Jessie, De Guzman": "Jessie, De Guzman",
-        "JS-NCR-001": "Jonna, Clarin",
-        "JS-NCR-005": "Julius, Abuel",
-        "AB-NCR-003": "Joseph, Candazo",
-        "RT-NCR-023": "Joy Merel, Soriente",
-        "NTL-DVO-001": "Khay, Yango",
-        "SH-DA-001": "Krista, Ilaya",
-        "RT-NCR-011": "Krizelle, Payno",
-        "RME-CDO-002": "Kurt, Guanco",
-        "RT-NCR-003": "Lotty, De Guzman",
-        "JP-CBU-002": "Mark, Villagonzalo",
-        "JS-NCR-003": "Michael, Quijano",
-        "Merie, Tumbado": "Merie, Tumbado",
-        "RT-NCR-021": "Niko, Gertes",
-        "RR-SLN-002": "Patrick, Managuelod",
-        "Paula, Cauguiran": "Paula, Cauguiran",
-        "AB-NCR-009": "Princess Joy, Ambre",
-        "RT-NCR-019": "Richard, Esteban",
-        "JP-CBU-004": "Reynaldo, Piedad",
-        "RT-NCR-015": "Randy, Bacor",
-        "RT-NCR-008": "Rodelio, Ico",
-        "RT-NCR-007": "Rodolfo, Delizo",
-        "RT-018": "Rosemarie, Nollora",
-        "RT-017": "Roselyn, Barnes",
-        "JS-NCR-002": "Sherilyn, Rapote",
-        "AB-NCR-005": "Vincent, Ortiz",
-        "AB-NCR-001": "Wilnie, Ardelozo",
-        "LX-NCR-001": "Leroux Xchire",
-        "": "",
-    };
 
     // Function to get Sales Agent name by ReferenceID
     const getSalesAgentName = (referenceID: string): string => {
@@ -116,7 +60,7 @@ const AgentSalesConversion: React.FC<AgentSalesConversionProps> = ({
             return `${user.Lastname}, ${user.Firstname}`;
         }
         // Fallback to referenceIdToNameMap if not found
-        return referenceIdToNameMap[referenceID] || "Unknown";
+        return "Unknown";
     };
 
     const fetchMetrics = async () => {
@@ -170,6 +114,21 @@ const AgentSalesConversion: React.FC<AgentSalesConversionProps> = ({
         }, {} as Record<string, Metric[]>);
     }, [metrics]);
 
+    const getMinutesDifference = (start?: string, end?: string) => {
+        if (!start || !end) return 0;
+        const startDate = new Date(start);
+        const endDate = new Date(end);
+        const diffMs = endDate.getTime() - startDate.getTime();
+        return diffMs > 0 ? Math.floor(diffMs / (1000 * 60)) : 0; // total minutes
+    };
+
+    const formatMinutesToHM = (minutes: number) => {
+        if (minutes <= 0) return "N/A";
+        const h = Math.floor(minutes / 60);
+        const m = minutes % 60;
+        return `${h}h ${m}m`;
+    };
+
     // ✅ Calculate totals per agent
     const calculateAgentTotals = (agentMetrics: Metric[]) => {
         return agentMetrics.reduce(
@@ -185,7 +144,14 @@ const AgentSalesConversion: React.FC<AgentSalesConversionProps> = ({
                 acc.totalQtySold += qtySold;
                 acc.totalConversionToSale += isConverted ? 1 : 0;
 
-                // Add customer status counts
+                // ✅ TSA Response Time in minutes
+                const minutesDiff = getMinutesDifference(metric.TicketEndorsed, metric.TsaAcknowledgeDate);
+                if (minutesDiff > 0) {
+                    acc.totalTsaResponseTime += minutesDiff; // total minutes
+                    acc.tsaCount += 1;
+                }
+
+                // Customer Status counts
                 switch (metric.CustomerStatus) {
                     case "New Client":
                         acc.newClientCount += 1;
@@ -219,10 +185,12 @@ const AgentSalesConversion: React.FC<AgentSalesConversionProps> = ({
                 newNonBuyingCount: 0,
                 existingActiveCount: 0,
                 existingInactiveCount: 0,
-                newClientConvertedAmount: 0, // Total amount for New Client Converted To Sales
-                newNonBuyingConvertedAmount: 0, // Total amount for New Non-Buying Converted To Sales
-                existingActiveConvertedAmount: 0, // Total amount for Existing Active Converted To Sales
-                existingInactiveConvertedAmount: 0, // Total amount for Existing Inactive Converted To Sales
+                newClientConvertedAmount: 0,
+                newNonBuyingConvertedAmount: 0,
+                existingActiveConvertedAmount: 0,
+                existingInactiveConvertedAmount: 0,
+                totalTsaResponseTime: 0, // total in minutes
+                tsaCount: 0
             }
         );
     };
@@ -282,96 +250,11 @@ const AgentSalesConversion: React.FC<AgentSalesConversionProps> = ({
                 totalATU: 0,
                 totalATV: 0,
                 totalConversionPercentage: 0,
+                totalTsaResponseTime: 0,
                 agentCount: 0,
             }
         );
     }, [groupedMetrics]);
-
-    const exportToExcel = () => {
-        const workbook = new ExcelJS.Workbook();
-        const worksheet = workbook.addWorksheet("TSA Traffic to Sales Conversion");
-
-        worksheet.columns = [
-            { header: 'Agent Name', key: 'agentName', width: 25 },
-            { header: 'Sales', key: 'sales', width: 10 },
-            { header: 'Non-Sales', key: 'nonSales', width: 10 },
-            { header: 'Amount', key: 'amount', width: 15 },
-            { header: 'QTY Sold', key: 'qtySold', width: 10 },
-            { header: 'Conversion to Sale', key: 'conversionToSale', width: 20 },
-            { header: '% Conversion Inquiry to Sales', key: 'conversionPercentage', width: 25 },
-            { header: 'New Client', key: 'newClientCount', width: 15 },
-            { header: 'New Non-Buying', key: 'newNonBuyingCount', width: 18 },
-            { header: 'Existing Active', key: 'existingActiveCount', width: 18 },
-            { header: 'Existing Inactive', key: 'existingInactiveCount', width: 20 },
-            { header: 'New Client (Converted To Sales)', key: 'newClientConvertedAmount', width: 30 },
-            { header: 'New Non-Buying (Converted To Sales)', key: 'newNonBuyingConvertedAmount', width: 35 },
-            { header: 'Existing Active (Converted To Sales)', key: 'existingActiveConvertedAmount', width: 35 },
-            { header: 'Existing Inactive (Converted To Sales)', key: 'existingInactiveConvertedAmount', width: 35 },
-        ];
-
-        Object.keys(groupedMetrics).forEach((refId) => {
-            const agentMetrics = groupedMetrics[refId];
-            const totals = calculateAgentTotals(agentMetrics);
-            const conversionPercentage =
-                totals.sales === 0
-                    ? "0.00%"
-                    : `${((totals.totalConversionToSale / totals.sales) * 100).toFixed(2)}%`;
-
-            worksheet.addRow({
-                agentName: getSalesAgentName(agentMetrics[0].SalesAgent),
-                sales: totals.sales,
-                nonSales: totals.nonSales,
-                amount: totals.totalAmount,
-                qtySold: totals.totalQtySold,
-                conversionToSale: totals.totalConversionToSale,
-                conversionPercentage,
-                newClientCount: totals.newClientCount,
-                newNonBuyingCount: totals.newNonBuyingCount,
-                existingActiveCount: totals.existingActiveCount,
-                existingInactiveCount: totals.existingInactiveCount,
-                newClientConvertedAmount: totals.newClientConvertedAmount,
-                newNonBuyingConvertedAmount: totals.newNonBuyingConvertedAmount,
-                existingActiveConvertedAmount: totals.existingActiveConvertedAmount,
-                existingInactiveConvertedAmount: totals.existingInactiveConvertedAmount
-            });
-        });
-
-        // Optional: add total row
-        worksheet.addRow({}); // blank spacer
-        const totalsRow = worksheet.addRow({
-            agentName: 'Total',
-            sales: totals.sales,
-            nonSales: totals.nonSales,
-            amount: totals.totalAmount,
-            qtySold: totals.totalQtySold,
-            conversionToSale: totals.totalConversionToSale,
-            conversionPercentage:
-                totals.sales === 0
-                    ? "0.00%"
-                    : `${((totals.totalConversionToSale / totals.sales) * 100).toFixed(2)}%`,
-            newClientCount: totals.newClientCount,
-            newNonBuyingCount: totals.newNonBuyingCount,
-            existingActiveCount: totals.existingActiveCount,
-            existingInactiveCount: totals.existingInactiveCount,
-            newClientConvertedAmount: totals.newClientConvertedAmount,
-            newNonBuyingConvertedAmount: totals.newNonBuyingConvertedAmount,
-            existingActiveConvertedAmount: totals.existingActiveConvertedAmount,
-            existingInactiveConvertedAmount: totals.existingInactiveConvertedAmount
-        });
-
-        totalsRow.font = { bold: true };
-
-        workbook.xlsx.writeBuffer().then((buffer) => {
-            const blob = new Blob([buffer], {
-                type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-            });
-            const link = document.createElement("a");
-            link.href = URL.createObjectURL(blob);
-            link.download = "TSATrafficSalesConversion.xlsx";
-            link.click();
-        });
-    };
-
 
     // ✅ Final Averages for % Conversion, ATU, and ATV
     return (
@@ -384,10 +267,11 @@ const AgentSalesConversion: React.FC<AgentSalesConversionProps> = ({
                 </div>
             ) : (
                 <>
-                    <h2 className="text-sm font-semibold mb-4 text-left">TSA Sales </h2>
-                    <button onClick={exportToExcel} className="flex items-center gap-1 border mb-2 bg-white text-black text-xs px-4 py-2 shadow-sm rounded hover:bg-orange-500 hover:text-white transition">
-                        <CiExport size={16} /> Export
-                    </button>
+                    <Export
+                        groupedMetrics={groupedMetrics}
+                        calculateAgentTotals={calculateAgentTotals}
+                        getSalesAgentName={getSalesAgentName}
+                    />
 
                     <table className="min-w-full table-auto">
                         <thead className="bg-gray-100 sticky top-0">
@@ -407,6 +291,7 @@ const AgentSalesConversion: React.FC<AgentSalesConversionProps> = ({
                                 <th className="px-6 py-4 font-semibold text-gray-700">New Non-Buying (Converted To Sales)</th>
                                 <th className="px-6 py-4 font-semibold text-gray-700">Existing Active (Converted To Sales)</th>
                                 <th className="px-6 py-4 font-semibold text-gray-700">Existing Inactive (Converted To Sales)</th>
+                                <th className="px-6 py-4 font-semibold text-gray-700">TSA Response Time</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-gray-100">
@@ -442,12 +327,20 @@ const AgentSalesConversion: React.FC<AgentSalesConversionProps> = ({
                                             <td className="px-6 py-4 text-xs">{formatAmountWithPeso(totals.newNonBuyingConvertedAmount)}</td>
                                             <td className="px-6 py-4 text-xs">{formatAmountWithPeso(totals.existingActiveConvertedAmount)}</td>
                                             <td className="px-6 py-4 text-xs">{formatAmountWithPeso(totals.existingInactiveConvertedAmount)}</td>
+                                            <td className="px-6 py-4 text-xs">
+                                                {totals.tsaCount > 0
+                                                    ? formatMinutesToHM(Math.round(totals.totalTsaResponseTime / totals.tsaCount))
+                                                    : "N/A"}
+                                            </td>
+
+
+
                                         </tr>
                                     );
                                 })
                             ) : (
                                 <tr>
-                                    <td colSpan={13} className="p-2 text-center text-gray-500 text-xs">
+                                    <td colSpan={14} className="p-2 text-center text-gray-500 text-xs">
                                         No data available
                                     </td>
                                 </tr>
@@ -481,6 +374,11 @@ const AgentSalesConversion: React.FC<AgentSalesConversionProps> = ({
                                 </td>
                                 <td className="px-6 py-4 text-xs">
                                     {formatAmountWithPeso(totals.existingInactiveConvertedAmount)}
+                                </td>
+                                <td className="px-6 py-4 text-xs">
+                                    {totals.agentCount > 0
+                                        ? formatMinutesToHM(Math.round(totals.totalTsaResponseTime / totals.agentCount))
+                                        : "N/A"}
                                 </td>
                             </tr>
                         </tfoot>
