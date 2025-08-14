@@ -20,6 +20,7 @@ import AgentSalesConversionChart from "../../components/Dashboard/AgentSalesConv
 import AgentSalesConversion from "../../components/Dashboard/AgentSalesConversionTable";
 import AgentSalesConversionWeekly from "../../components/Dashboard/AgentSalesConversionWeeklyTable";
 import TSASalesConversion from "../../components/Dashboard/TSASalesConversion";
+import TSMSalesConversion from "../../components/Dashboard/TSMSalesConversion";
 
 const getToday = () => new Date().toISOString().split("T")[0];
 const get7DaysAgo = () => {
@@ -276,6 +277,9 @@ const DashboardPage: React.FC = () => {
                 </div>
                 <div className="bg-white shadow-md rounded-lg p-4">
                   <TSASalesConversion {...userDetails} startDate={startDate} endDate={endDate} />
+                </div>
+                <div className="bg-white shadow-md rounded-lg p-4">
+                  <TSMSalesConversion {...userDetails} startDate={startDate} endDate={endDate} />
                 </div>
               </div>
             </>

@@ -100,7 +100,6 @@ const Export: React.FC<ExportProps> = ({ groupedMetrics, calculateAgentTotals, g
 
   return (
     <>
-      <h2 className="text-sm font-semibold mb-4 text-left">TSA Sales</h2>
       <button
         onClick={exportToExcel}
         className="flex items-center gap-1 border mb-2 bg-white text-black text-xs px-4 py-2 shadow-sm rounded hover:bg-orange-500 hover:text-white transition"

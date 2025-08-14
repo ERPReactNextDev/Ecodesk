@@ -11,7 +11,7 @@ interface Metric {
     Status: string;
     createdAt: string;
     CustomerStatus: string;
-    SalesAgent: string;
+    SalesManager: string;
     TsaAcknowledgeDate?: string;
     TicketEndorsed?: string;
     Remarks: string;
@@ -69,7 +69,7 @@ const AgentSalesConversion: React.FC<AgentSalesConversionProps> = ({
     const fetchMetrics = async () => {
         try {
             const response = await fetch(
-                `/api/ModuleCSR/Dashboard/AgentSalesConversion?ReferenceID=${ReferenceID}&Role=${Role}`
+                `/api/ModuleCSR/Dashboard/TSMSalesConversion?ReferenceID=${ReferenceID}&Role=${Role}`
             );
             if (!response.ok) throw new Error("Failed to fetch metrics");
 
@@ -108,10 +108,10 @@ const AgentSalesConversion: React.FC<AgentSalesConversionProps> = ({
     // ✅ Group by ReferenceID
     const groupedMetrics = useMemo(() => {
         return metrics.reduce((acc, metric) => {
-            if (!acc[metric.SalesAgent]) {
-                acc[metric.SalesAgent] = [];
+            if (!acc[metric.SalesManager]) {
+                acc[metric.SalesManager] = [];
             }
-            acc[metric.SalesAgent].push(metric);
+            acc[metric.SalesManager].push(metric);
             return acc;
         }, {} as Record<string, Metric[]>);
     }, [metrics]);
@@ -236,9 +236,6 @@ const AgentSalesConversion: React.FC<AgentSalesConversionProps> = ({
         );
     };
 
-
-
-
     // ✅ Format amount with Peso sign
     const formatAmountWithPeso = (amount: any) => {
         const parsedAmount = parseFloat(amount);
@@ -333,8 +330,7 @@ const AgentSalesConversion: React.FC<AgentSalesConversionProps> = ({
                     </div>
                 </div>
             ) : (
-                <>
-                    <h2 className="text-sm font-semibold mb-4 text-left">TSA Sales</h2>
+                <>  <h2 className="text-sm font-semibold mb-4 text-left">TSM Sales</h2>
                     <Export
                         groupedMetrics={groupedMetrics}
                         calculateAgentTotals={calculateAgentTotals}
@@ -379,7 +375,7 @@ const AgentSalesConversion: React.FC<AgentSalesConversionProps> = ({
                                     return (
                                         <tr key={index} className="border-b whitespace-nowrap">
                                             <td className="px-6 py-4 text-xs capitalize">
-                                                {getSalesAgentName(agentMetrics[0].SalesAgent)}
+                                                {getSalesAgentName(agentMetrics[0].SalesManager)}
                                             </td>
                                             <td className="px-6 py-4 text-xs">{totals.sales}</td>
                                             <td className="px-6 py-4 text-xs">{totals.nonSales}</td>
