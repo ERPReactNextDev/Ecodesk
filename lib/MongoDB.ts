@@ -34,12 +34,6 @@ export async function connectToDatabase() {
   return client.db("ecoshift"); // Return the 'ecoshift' database
 }
 
-// Function to broadcast new posts
-let io: Server | null = null;
-export function setSocketServer(server: Server) {
-  io = server;
-}
-
 // Register a new user
 export async function registerUser({ userName, Email, Password, }: { userName: string; Email: string; Password: string;}) {
   const db = await connectToDatabase();

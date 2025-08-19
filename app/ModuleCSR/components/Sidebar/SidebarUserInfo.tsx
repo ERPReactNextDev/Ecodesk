@@ -17,11 +17,18 @@ interface SidebarUserInfoProps {
   };
 }
 
+interface SessionData {
+  email: string;
+  status: string;
+  timestamp: string;
+}
+
 const SidebarUserInfo: React.FC<SidebarUserInfoProps> = ({
   collapsed,
   userDetails,
 }) => {
   const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const [sessionInfo, setSessionInfo] = useState<SessionData | null>(null);
   const [isMounted, setIsMounted] = useState(false);
   const audioRef = useRef<HTMLAudioElement>(null);
   const router = useRouter();
@@ -77,6 +84,40 @@ const SidebarUserInfo: React.FC<SidebarUserInfoProps> = ({
 
   if (collapsed) return null;
 
+  useEffect(() => {
+    const fetchSession = async () => {
+      try {
+        const response = await fetch(`/api/fetchsession?id=${encodeURIComponent(userDetails.Email)}`);
+        if (!response.ok) throw new Error("Failed to fetch session");
+        const data: SessionData[] = await response.json();
+
+        // Filter by email and today
+        const today = new Date();
+        const todaySessions = data
+          .filter(item => item.email === userDetails.Email)
+          .filter(item => {
+            const sessionDate = new Date(item.timestamp);
+            return (
+              sessionDate.getFullYear() === today.getFullYear() &&
+              sessionDate.getMonth() === today.getMonth() &&
+              sessionDate.getDate() === today.getDate()
+            );
+          });
+
+        // Get the earliest timestamp for today
+        const firstSession = todaySessions.sort(
+          (a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
+        )[0];
+
+        setSessionInfo(firstSession || null);
+      } catch (err) {
+        console.error("Error fetching session:", err);
+      }
+    };
+
+    fetchSession();
+  }, [userDetails.Email]);
+
   return (
     <div
       className="relative p-6 dark:bg-gray-900 dark:border-gray-700 flex items-center justify-between flex-shrink-0 overflow-hidden"
@@ -117,6 +158,11 @@ const SidebarUserInfo: React.FC<SidebarUserInfoProps> = ({
           </p>
           <p className="italic">{userDetails.Company}</p>
           <p className="italic">( {userDetails.Position} )</p>
+          {sessionInfo && (
+            <p className="italic text-[10px] text-gray-500 capitalize">
+              Status: {sessionInfo.status} | Time: {new Date(sessionInfo.timestamp).toLocaleString()}
+            </p>
+          )}
         </div>
       </div>
 
